@@ -36,46 +36,25 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .viewer-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
-            max-width: 800px;
-            width: 100%;
-        }
-        
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            overflow: hidden;
         }
         
         .viewer-wrapper {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
+            max-width: 100%;
+            height: 100vh;
             cursor: grab;
             user-select: none;
             -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .viewer-wrapper:active {
@@ -83,26 +62,28 @@
         }
         
         .viewer-wrapper img {
-            width: 100%;
+            width: auto;
             height: auto;
+            max-width: 100%;
+            max-height: 100%;
             display: block;
-            border-radius: 10px;
         }
         
         .loading {
             text-align: center;
-            padding: 100px 20px;
-            color: #666;
+            padding: 50px 20px;
+            color: #999;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #666;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
         }
         
         @keyframes spin {
@@ -110,75 +91,31 @@
             100% { transform: rotate(360deg); }
         }
         
-        .hint {
-            text-align: center;
-            margin-top: 20px;
-            color: #999;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .hint svg {
-            width: 20px;
-            height: 20px;
-            animation: slide 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes slide {
-            0%, 100% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-        }
-        
         .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
             width: 100%;
-            height: 4px;
+            height: 3px;
             background: #f0f0f0;
-            border-radius: 2px;
-            margin-top: 20px;
-            overflow: hidden;
         }
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: #666;
             width: 0%;
             transition: width 0.3s ease;
-        }
-        
-        @media (max-width: 768px) {
-            .viewer-container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 22px;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="viewer-container">
-        <h1>Ingenico Lane 3600</h1>
-        <p class="subtitle">360° Interactive View</p>
-        
-        <div id="viewer" class="loading">
-            <div class="spinner"></div>
-            <p>Loading 360° viewer...</p>
-        </div>
-        
-        <div class="hint" style="display: none;" id="hint">
-            <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
-            </svg>
-            Drag to rotate
-        </div>
-        
-        <div class="progress-bar" id="progressBar" style="display: none;">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
+    <div id="viewer" class="loading">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+    
+    <div class="progress-bar" id="progressBar" style="display: none;">
+        <div class="progress-fill" id="progressFill"></div>
     </div>
 
     <script>
@@ -274,8 +211,7 @@
                 this.container.innerHTML = '';
                 this.container.appendChild(this.wrapper);
                 
-                // Show hint
-                document.getElementById('hint').style.display = 'flex';
+                // Hide progress bar
                 document.getElementById('progressBar').style.display = 'none';
                 
                 this.isLoaded = true;
@@ -340,7 +276,8 @@
             }
             
             updateFrame(delta) {
-                const frameDelta = Math.round(delta / 10);
+                // Negate delta to reverse spin direction
+                const frameDelta = Math.round(-delta / 10);
                 this.currentFrame = (this.currentFrame + frameDelta + this.config.totalFrames) % this.config.totalFrames;
                 this.imageElement.src = this.images[this.currentFrame].src;
             }
