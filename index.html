@@ -5,20 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ingenico Lane 3600 - 360° View</title>
     
-    <!-- Open Graph / iframely meta tags for embedding -->
+    <!-- Open Graph / iframely meta tags for embedding as player -->
     <meta property="og:title" content="Ingenico Lane 3600 - 360° Interactive View">
     <meta property="og:description" content="Interactive 360° product viewer - drag to rotate">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="video.other">
     <meta property="og:site_name" content="Product 360 Viewer">
-    <meta name="twitter:card" content="summary_large_image">
+    
+    <!-- Canonical URL - update this with your actual GitHub Pages URL -->
+    <link rel="canonical" href="">
+    <meta property="og:url" content="">
+    
+    <!-- Twitter Card for player embedding -->
+    <meta name="twitter:card" content="player">
     <meta name="twitter:title" content="Ingenico Lane 3600 - 360° View">
-    <meta name="twitter:description" content="Interactive 360° product viewer">
+    <meta name="twitter:description" content="Interactive 360° product viewer - drag to rotate">
+    <meta name="twitter:player:width" content="800">
+    <meta name="twitter:player:height" content="600">
+    
+    <!-- iframely player detection - points to this page itself -->
+    <link rel="iframely player" type="text/html" media="aspect-ratio: 1.333">
     
     <!-- Allow embedding in iframes -->
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-    
-    <!-- Responsive iframe detection for iframely -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <style>
         * {
