@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "type": "rich",
+  "provider_name": "Product 360 Viewer",
+  "provider_url": "https://john-github-tests.github.io/spin-embed/",
+  "title": "Ingenico Lane 3600 - 360° View",
+  "author_name": "Product 360 Viewer",
+  "html": "<iframe src=\"https://john-github-tests.github.io/spin-embed/\" width=\"800\" height=\"600\" frameborder=\"0\" allowfullscreen></iframe>",
+  "width": 800,
+  "height": 600
+}
