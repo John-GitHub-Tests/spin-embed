@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingenico Lane 3600 - 360° View</title>
+    
+    <!-- Open Graph / iframely meta tags for embedding -->
+    <meta property="og:title" content="Ingenico Lane 3600 - 360° Interactive View">
+    <meta property="og:description" content="Interactive 360° product viewer - drag to rotate">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Product 360 Viewer">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ingenico Lane 3600 - 360° View">
+    <meta name="twitter:description" content="Interactive 360° product viewer">
+    
+    <!-- Allow embedding in iframes -->
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    
+    <!-- Responsive iframe detection for iframely -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .viewer-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .viewer-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .viewer-wrapper:active {
+            cursor: grabbing;
+        }
+        
+        .viewer-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 100px 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hint {
+            text-align: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .hint svg {
+            width: 20px;
+            height: 20px;
+            animation: slide 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes slide {
+            0%, 100% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .viewer-container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="viewer-container">
+        <h1>Ingenico Lane 3600</h1>
+        <p class="subtitle">360° Interactive View</p>
+        
+        <div id="viewer" class="loading">
+            <div class="spinner"></div>
+            <p>Loading 360° viewer...</p>
+        </div>
+        
+        <div class="hint" style="display: none;" id="hint">
+            <svg fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+            </svg>
+            Drag to rotate
+        </div>
+        
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            totalFrames: 60,
+            // Option 1: Frames in same directory as index.html
+            framePathTemplate: 'frames/frame_{index}.png',
+            
+            // Option 2: Frames hosted on CDN (uncomment and update URL)
+            // framePathTemplate: 'https://your-cdn.com/lane3600/frame_{index}.png',
+            
+            friction: 0.92,        // Momentum friction (0-1, higher = more momentum)
+            sensitivity: 0.5       // Drag sensitivity
+        };
+
+        class Product360Viewer {
+            constructor(container, config) {
+                this.container = container;
+                this.config = config;
+                this.currentFrame = 0;
+                this.images = [];
+                this.isLoaded = false;
+                this.isDragging = false;
+                this.startX = 0;
+                this.lastX = 0;
+                this.velocity = 0;
+                this.animationFrame = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.preloadImages();
+            }
+            
+            getFramePath(index) {
+                const paddedIndex = String(index).padStart(3, '0');
+                return this.config.framePathTemplate.replace('{index}', paddedIndex);
+            }
+            
+            async preloadImages() {
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                progressBar.style.display = 'block';
+                
+                let loaded = 0;
+                const updateProgress = () => {
+                    const percent = (loaded / this.config.totalFrames) * 100;
+                    progressFill.style.width = percent + '%';
+                };
+                
+                // Load all images
+                const promises = [];
+                for (let i = 0; i < this.config.totalFrames; i++) {
+                    const promise = new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            loaded++;
+                            updateProgress();
+                            resolve(img);
+                        };
+                        img.onerror = () => reject(`Failed to load frame ${i}`);
+                        img.src = this.getFramePath(i);
+                    });
+                    promises.push(promise);
+                }
+                
+                try {
+                    this.images = await Promise.all(promises);
+                    this.render();
+                } catch (error) {
+                    console.error('Error loading images:', error);
+                    this.container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #d9534f;">
+                            <p>⚠️ Error loading 360° viewer</p>
+                            <p style="font-size: 12px; margin-top: 10px;">Please check that frames are uploaded correctly.</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            render() {
+                // Create viewer wrapper
+                this.wrapper = document.createElement('div');
+                this.wrapper.className = 'viewer-wrapper';
+                
+                // Add first image
+                this.imageElement = this.images[0].cloneNode();
+                this.wrapper.appendChild(this.imageElement);
+                
+                // Replace loading state
+                this.container.innerHTML = '';
+                this.container.appendChild(this.wrapper);
+                
+                // Show hint
+                document.getElementById('hint').style.display = 'flex';
+                document.getElementById('progressBar').style.display = 'none';
+                
+                this.isLoaded = true;
+                this.addEventListeners();
+            }
+            
+            addEventListeners() {
+                // Mouse events
+                this.wrapper.addEventListener('mousedown', this.onDragStart.bind(this));
+                document.addEventListener('mousemove', this.onDragMove.bind(this));
+                document.addEventListener('mouseup', this.onDragEnd.bind(this));
+                
+                // Touch events
+                this.wrapper.addEventListener('touchstart', this.onDragStart.bind(this));
+                document.addEventListener('touchmove', this.onDragMove.bind(this));
+                document.addEventListener('touchend', this.onDragEnd.bind(this));
+                
+                // Prevent default drag behavior
+                this.wrapper.addEventListener('dragstart', (e) => e.preventDefault());
+            }
+            
+            onDragStart(e) {
+                this.isDragging = true;
+                this.velocity = 0;
+                const x = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+                this.startX = x;
+                this.lastX = x;
+                
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+            }
+            
+            onDragMove(e) {
+                if (!this.isDragging) return;
+                
+                e.preventDefault();
+                const x = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+                const deltaX = x - this.lastX;
+                
+                this.velocity = deltaX;
+                this.updateFrame(deltaX * this.config.sensitivity);
+                this.lastX = x;
+            }
+            
+            onDragEnd() {
+                if (!this.isDragging) return;
+                this.isDragging = false;
+                this.applyMomentum();
+            }
+            
+            applyMomentum() {
+                if (Math.abs(this.velocity) < 0.5) {
+                    this.velocity = 0;
+                    return;
+                }
+                
+                this.updateFrame(this.velocity * this.config.sensitivity);
+                this.velocity *= this.config.friction;
+                
+                this.animationFrame = requestAnimationFrame(() => this.applyMomentum());
+            }
+            
+            updateFrame(delta) {
+                const frameDelta = Math.round(delta / 10);
+                this.currentFrame = (this.currentFrame + frameDelta + this.config.totalFrames) % this.config.totalFrames;
+                this.imageElement.src = this.images[this.currentFrame].src;
+            }
+        }
+        
+        // Initialize viewer
+        document.addEventListener('DOMContentLoaded', () => {
+            const viewer = new Product360Viewer(
+                document.getElementById('viewer'),
+                CONFIG
+            );
+        });
+    </script>
+</body>
+</html>
